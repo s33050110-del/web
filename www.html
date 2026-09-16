@@ -1,10 +1,40 @@
 <!DOCTYPE html>
 <html>
-<body>
+  <head>
+    <title>九九乘法表</title>
 
-<h2>HTML Image</h2> 資訊二甲 10號 周家承
+    <!-- CSS -->
+    <style>
+      
+      td {
+        border: 1px solid;
+        background: linear-gradient(to bottom, white, lightblue);
+        padding: 10px;
+      }
+    </style>
+<h2>資訊三甲 周家丞</h2>
+    
+    <script>
+      
+      document.write("<table align='center'>");
 
-<img src="Untitled-design-20-e1745534545813-658x677.webp" alt="Trulli" width="500" height="333">
+      for (let i = 0; i <= 9; i++) {
+        document.write("<tr>");
 
-</body>
+        for (let j = 0; j <= i; j++) {
+          document.write("<td>");
+          document.write(i + " * " + j + " = " + (i * j) + "&nbsp;&nbsp;&nbsp;");
+          document.write("</td>");
+        }
+
+        document.write("</tr>");
+      }
+
+      document.write("</table>");
+    </script>
+  </head>
+
+  <body>
+
+  </body>
 </html>
