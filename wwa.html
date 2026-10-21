@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 1. 網頁標題加上 班級姓名 -->
+    <title>🎰 資三甲周家丞_大樂透自動選號與對獎系統</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: white;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .number-box {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #d9534f;
+            margin-top: 8px;
+            min-height: 28px;
+        }
+
+        /* 3. 按鈕樣式與效果 (Style) */
+        .btn-group {
+            margin-top: 25px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease; /* 平滑過渡效果 */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 生成/對獎按鈕風格 */
+        .btn-play {
+            background-color: #007bff;
+        }
+
+        .btn-play:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px); /* 懸浮抬升 */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 2. 重新開始按鈕風格 */
+        .btn-reset {
+            background-color: #6c757d;
+        }
+
+        .btn-reset:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        button:active {
+            transform: translateY(0); /* 點擊按下效果 */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-box {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #28a745;
+            margin-top: 20px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🎰 資三甲周家丞_大樂透系統</h1>
+
+        <!-- 本期開獎號碼區域 -->
+        <div class="card">
+            <h3>開獎號碼 (電腦開出)</h3>
+            <div id="winningNumbers" class="number-box">尚未開獎</div>
+        </div>
+
+        <!-- 玩家自動選號區域 -->
+        <div class="card">
+            <h3>您的彩券號碼 (自動選號)</h3>
+            <div id="userNumbers" class="number-box">尚未選號</div>
+        </div>
+
+        <!-- 對獎結果區域 -->
+        <div id="result" class="result-box"></div>
+
+        <!-- 按鈕控制區 -->
+        <div class="btn-group">
+            <button class="btn-play" onclick="playGame()">自動選號與對獎</button>
+            <button class="btn-reset" onclick="resetGame()">重新開始</button>
+        </div>
+    </div>
+
+    <script>
+        // 產生 1~49 不重複的 6 個數字並排序
+        function generateLotteryNumbers() {
+            let numbers = [];
+            while (numbers.length < 6) {
+                let randomNum = Math.floor(Math.random() * 49) + 1;
+                if (!numbers.includes(randomNum)) {
+                    numbers.push(randomNum);
+                }
+            }
+            return numbers.sort((a, b) => a - b);
+        }
+
+        // 開始自動選號與對獎
+        function playGame() {
+            // 1. 生成開獎號碼與玩家號碼
+            let winning = generateLotteryNumbers();
+            let user = generateLotteryNumbers();
+
+            // 2. 利用 id 與 document.getElementById() 更新網頁內容
+            document.getElementById("winningNumbers").innerText = winning.join(", ");
+            document.getElementById("userNumbers").innerText = user.join(", ");
+
+            // 3. 比對中獎號碼數量
+            let matched = user.filter(num => winning.includes(num));
+            let matchCount = matched.length;
+
+            // 4. 顯示對獎結果
+            let resultElement = document.getElementById("result");
+            if (matchCount > 0) {
+                resultElement.innerText = `對獎結果：中了 ${matchCount} 個號碼 (${matched.join(", ")})！`;
+            } else {
+                resultElement.innerText = "對獎結果：很遺憾，一個都沒中，再接再厲！";
+            }
+        }
+
+        // 重新開始功能
+        function resetGame() {
+            // 利用 document.getElementById() 將內容還原為初始狀態
+            document.getElementById("winningNumbers").innerText = "尚未開獎";
+            document.getElementById("userNumbers").innerText = "尚未選號";
+            document.getElementById("result").innerText = "";
+        }
+    </script>
+
+</body>
+</html>
