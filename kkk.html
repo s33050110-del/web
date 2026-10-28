@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>電燈開關模擬器 - Light Switch Simulator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome 圖示 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            transition: background-color 0.5s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+        }
+
+        /* 關燈狀態 */
+        body.light-off {
+            background-color: #0d0f12;
+            color: #64748b;
+        }
+
+        /* 開燈狀態 */
+        body.light-on {
+            background-color: #fffbeb;
+            color: #475569;
+        }
+
+        /* 燈泡動態光暈 */
+        .bulb-glow {
+            transition: all 0.4s ease;
+        }
+
+        body.light-on .bulb-glow {
+            filter: drop-shadow(0 0 50px rgba(251, 191, 36, 0.9))
+                    drop-shadow(0 0 100px rgba(245, 158, 11, 0.6));
+            color: #fbbf24;
+        }
+
+        body.light-off .bulb-glow {
+            filter: drop-shadow(0 0 0px transparent);
+            color: #334155;
+        }
+
+        /* 派對彩虹模式 */
+        @keyframes rainbowGlow {
+            0% { color: #ef4444; filter: drop-shadow(0 0 60px #ef4444); }
+            20% { color: #f97316; filter: drop-shadow(0 0 60px #f97316); }
+            40% { color: #eab308; filter: drop-shadow(0 0 60px #eab308); }
+            60% { color: #22c55e; filter: drop-shadow(0 0 60px #22c55e); }
+            80% { color: #3b82f6; filter: drop-shadow(0 0 60px #3b82f6); }
+            100% { color: #a855f7; filter: drop-shadow(0 0 60px #a855f7); }
+        }
+
+        body.party-mode .bulb-glow {
+            animation: rainbowGlow 0.8s infinite alternate ease-in-out;
+        }
+
+        /* 擬真 3D 壁掛開關 */
+        .switch-plate {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5),
+                        -2px -2px 10px rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        body.light-on .switch-plate {
+            background: linear-gradient(145deg, #f1f5f9, #e2e8f0);
+            box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.15),
+                        -5px -5px 15px rgba(255, 255, 255, 0.8);
+        }
+
+        .switch-button {
+            transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s;
+        }
+
+        /* 飛蛾動畫 */
+        .moth {
+            position: absolute;
+            font-size: 1.5rem;
+            pointer-events: none;
+            transition: all 1.2s ease-out;
+            z-index: 20;
+        }
+
+        /* 點擊擴散波紋 */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            transform: scale(0);
+            animation: rippleEffect 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes rippleEffect {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="light-off min-h-screen flex flex-col items-center justify-between p-6 relative select-none">
+
+    <!-- 頂部數據列與作者資訊 -->
+    <header class="w-full max-w-md flex flex-col gap-3 items-center z-10">
+        <!-- 學生資訊標題 -->
+        <h1 class="text-3xl font-extrabold tracking-wider transition-all duration-500 hover:scale-105 cursor-default drop-shadow-md">
+            資訊三甲 周家丞
+        </h1>
+
+        <div class="w-full flex justify-between items-center bg-black/20 backdrop-blur-md p-4 rounded-2xl border border-white/10 transition-colors duration-500">
+            <div class="flex flex-col">
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-70">開關次數</span>
+                <span id="clickCount" class="text-2xl font-extrabold text-amber-400">0</span>
+            </div>
+            <div class="flex flex-col items-end">
+                <span class="text-xs font-semibold uppercase tracking-wider opacity-70">當前狀態</span>
+                <span id="statusText" class="text-lg font-bold text-slate-400">關燈 (OFF)</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 中央燈泡區塊 -->
+    <main class="relative flex flex-col items-center justify-center my-auto z-10">
+        <!-- 電線 -->
+        <div class="w-1 h-24 bg-slate-600/50 mb-[-5px]"></div>
+        
+        <!-- 燈泡圖示 -->
+        <div id="bulb" class="bulb-glow text-8xl md:text-9xl cursor-pointer transition-transform active:scale-95 duration-200">
+            <i class="fa-solid fa-lightbulb"></i>
+        </div>
+
+        <!-- 狀態提醒小提示 -->
+        <div id="modeBadge" class="mt-8 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide bg-white/10 backdrop-blur-md opacity-0 transition-opacity duration-300">
+            🎉 觸發狂歡彩虹模式！
+        </div>
+    </main>
+
+    <!-- 下方擬真開關按鈕 -->
+    <footer class="w-full max-w-md flex flex-col items-center gap-6 z-10 mb-4">
+        <!-- 開關面板 -->
+        <div id="switchPlate" class="switch-plate w-24 h-40 rounded-3xl p-3 flex flex-col justify-between items-center cursor-pointer relative" onclick="toggleLight(event)">
+            <!-- ON / OFF 標示 -->
+            <span class="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-1">ON</span>
+            
+            <!-- 切換開關本體 -->
+            <div id="switchBtn" class="switch-button w-16 h-20 rounded-2xl bg-slate-800 border-2 border-slate-700/50 shadow-inner flex items-center justify-center">
+                <div class="w-8 h-2 rounded-full bg-slate-600/50"></div>
+            </div>
+
+            <span class="text-[10px] font-bold opacity-40 uppercase tracking-widest mb-1">OFF</span>
+        </div>
+
+        <p class="text-xs opacity-50 tracking-wider">點擊燈泡或切換開關控制燈光</p>
+    </footer>
+
+    <!-- 飛蛾容器 -->
+    <div id="mothContainer"></div>
+
+    <script>
+        /* --- 音效產生器 (Web Audio API) --- */
+        class SwitchAudio {
+            constructor() {
+                this.audioCtx = null;
+            }
+
+            init() {
+                if (!this.audioCtx) {
+                    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playSwitchSound(isOn) {
+                this.init();
+                if (this.audioCtx.state === 'suspended') {
+                    this.audioCtx.resume();
+                }
+
+                const osc = this.audioCtx.createOscillator();
+                const gain = this.audioCtx.createGain();
+
+                osc.type = 'sine';
+                // 開燈聲音頻率較高，關燈較低
+                osc.frequency.setValueAtTime(isOn ? 320 : 200, this.audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(isOn ? 120 : 80, this.audioCtx.currentTime + 0.05);
+
+                gain.gain.setValueAtTime(0.3, this.audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.05);
+
+                osc.connect(gain);
+                gain.connect(this.audioCtx.destination);
+
+                osc.start();
+                osc.stop(this.audioCtx.currentTime + 0.05);
+            }
+        }
+
+        const audio = new SwitchAudio();
+
+        /* --- 遊戲邏輯狀態 --- */
+        let isLightOn = false;
+        let count = 0;
+        let clickTimes = [];
+        let mothInterval = null;
+        let mothCount = 0;
+
+        // DOM 元素
+        const body = document.body;
+        const bulb = document.getElementById('bulb');
+        const clickCountEl = document.getElementById('clickCount');
+        const statusTextEl = document.getElementById('statusText');
+        const switchBtn = document.getElementById('switchBtn');
+        const modeBadge = document.getElementById('modeBadge');
+        const mothContainer = document.getElementById('mothContainer');
+
+        // 點擊燈泡也能開關
+        bulb.addEventListener('click', (e) => toggleLight(e));
+
+        // 開關主控制函式
+        function toggleLight(e) {
+            isLightOn = !isLightOn;
+            count++;
+
+            // 播放擬真開關音效
+            audio.playSwitchSound(isLightOn);
+
+            // 畫面點擊波紋視覺效果
+            if (e) createRipple(e);
+
+            // 更新 UI 與狀態
+            if (isLightOn) {
+                body.classList.remove('light-off');
+                body.classList.add('light-on');
+                statusTextEl.innerText = "開燈 (ON)";
+                statusTextEl.className = "text-lg font-bold text-amber-500";
+                switchBtn.style.transform = "translateY(-12px)";
+                switchBtn.className = "switch-button w-16 h-20 rounded-2xl bg-white border-2 border-slate-200 shadow-md flex items-center justify-center";
+                startMothInvasion();
+            } else {
+                body.classList.remove('light-on', 'party-mode');
+                body.classList.add('light-off');
+                statusTextEl.innerText = "關燈 (OFF)";
+                statusTextEl.className = "text-lg font-bold text-slate-400";
+                switchBtn.style.transform = "translateY(12px)";
+                switchBtn.className = "switch-button w-16 h-20 rounded-2xl bg-slate-800 border-2 border-slate-700/50 shadow-inner flex items-center justify-center";
+                stopMothInvasion();
+                hideBadge();
+            }
+
+            clickCountEl.innerText = count;
+
+            // 檢測是否觸發快速連擊（彩虹狂歡模式）
+            checkPartyMode();
+        }
+
+        /* --- 趣味模式：快速連擊檢測 --- */
+        function checkPartyMode() {
+            const now = Date.now();
+            clickTimes.push(now);
+            // 僅保留過去 2 秒內的點擊
+            clickTimes = clickTimes.filter(t => now - t < 2000);
+
+            if (clickTimes.length >= 7 && isLightOn) {
+                body.classList.add('party-mode');
+                showBadge("🎉 狂歡彩虹派對模式開啟！");
+            }
+        }
+
+        function showBadge(text) {
+            modeBadge.innerText = text;
+            modeBadge.style.opacity = '1';
+        }
+
+        function hideBadge() {
+            modeBadge.style.opacity = '0';
+        }
+
+        /* --- 趣味模式：飛蛾撲火（開燈太久觸發） --- */
+        function startMothInvasion() {
+            mothInterval = setInterval(() => {
+                if (isLightOn && mothCount < 12) {
+                    spawnMoth();
+                }
+            }, 2500);
+        }
+
+        function stopMothInvasion() {
+            clearInterval(mothInterval);
+            mothContainer.innerHTML = '';
+            mothCount = 0;
+        }
+
+        function spawnMoth() {
+            const moth = document.createElement('div');
+            moth.className = 'moth';
+            moth.innerHTML = '🦋';
+            
+            // 隨機從螢幕邊緣生成
+            const startX = Math.random() < 0.5 ? -30 : window.innerWidth + 30;
+            const startY = Math.random() * window.innerHeight;
+            moth.style.left = `${startX}px`;
+            moth.style.top = `${startY}px`;
+
+            mothContainer.appendChild(moth);
+            mothCount++;
+
+            // 讓飛蛾朝向中央燈泡飛行
+            setTimeout(() => {
+                const bulbRect = bulb.getBoundingClientRect();
+                const targetX = bulbRect.left + bulbRect.width / 2 + (Math.random() - 0.5) * 60;
+                const targetY = bulbRect.top + bulbRect.height / 2 + (Math.random() - 0.5) * 60;
+
+                moth.style.left = `${targetX}px`;
+                moth.style.top = `${targetY}px`;
+            }, 50);
+
+            if (mothCount === 5) {
+                showBadge("🦋 燈光太亮了，吸引了飛蛾前來！");
+            }
+        }
+
+        /* --- 點擊擴散波紋 --- */
+        function createRipple(e) {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX) || window.innerWidth / 2;
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY) || window.innerHeight / 2;
+
+            ripple.style.left = `${clientX - 25}px`;
+            ripple.style.top = `${clientY - 25}px`;
+            ripple.style.width = '50px';
+            ripple.style.height = '50px';
+            ripple.style.backgroundColor = isLightOn ? 'rgba(251, 191, 36, 0.3)' : 'rgba(255, 255, 255, 0.1)';
+
+            document.body.appendChild(ripple);
+
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        }
+
+        // 初始化開關位置
+        switchBtn.style.transform = "translateY(12px)";
+    </script>
+</body>
+</html>
